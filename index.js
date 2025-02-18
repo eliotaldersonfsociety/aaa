@@ -2,12 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const authRouter = require('./routes/auth');
-const postRouter = require('./routes/post');
-const userRouter = require('./routes/user');
-const actualizarRouter = require('./routes/actualizar');
-const { createUserTable } = require('./models/user');
-const { createPurchasesTable } = require('./models/purchase');
 
 dotenv.config();
 
