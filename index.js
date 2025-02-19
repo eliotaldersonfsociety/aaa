@@ -214,7 +214,7 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta de prueba para verificar si la API está funcionando
+// Ruta de prueba para verificar si la API está funcionando❤️
 app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
