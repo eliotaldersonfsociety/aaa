@@ -164,6 +164,25 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
+// Ruta para obtener compras (posts) del usuario
+app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  console.log("User ID from JWT:", userId);
+  try {
+    const result = await db.execute('SELECT * FROM purchases WHERE userId = ?', [userId]);
+       // Si no hay compras, devolver un mensaje adecuado
+    if (!result || result.length === 0) {
+      console.log("No purchases found for the user.");
+      return res.status(404).json({ message: 'No purchases found' });
+    }
+
+    return res.json({ purchases: result });
+  } catch (error) {
+    console.error("Error fetching purchases:", error);
+    return res.status(500).json({ error: "Error fetching purchases" });
+  }
+});
+
 // Ruta de prueba para verificar si la API está funcionando
 app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
