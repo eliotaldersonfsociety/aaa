@@ -4,25 +4,33 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Client } = require('pg');
+const { createClient } = require('@libsql/client');  // Usamos createClient para Turso
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Conexión a la base de datos de Turso
-const client = new Client({
-  connectionString: process.env.TURSO_CONNECTION_URL,
-  ssl: true,  // Habilitar SSL para la conexión
-  headers: {
-    Authorization: `Bearer ${process.env.TURSO_AUTH_TOKEN}`,  // Token de autenticación
-  },
+// Verificar que las variables de entorno están cargadas correctamente
+console.log("TURSO_CONNECTION_URL: ", process.env.TURSO_CONNECTION_URL);
+console.log("TURSO_AUTH_TOKEN: ", process.env.TURSO_AUTH_TOKEN);
+
+// Conexión a la base de datos de Turso utilizando createClient
+const db = createClient({
+  url: process.env.TURSO_CONNECTION_URL,  // Asegúrate de que la URL es correcta
+  authToken: process.env.TURSO_AUTH_TOKEN,  // Token de autenticación
 });
 
-client.connect()
-  .then(() => console.log('Conexión exitosa a la base de datos'))
-  .catch(err => console.error('Error en la conexión a la base de datos:', err));
+// Conectar a la base de datos
+async function connectDatabase() {
+  try {
+    // Test para verificar la conexión (esto no es necesario, pero útil para depuración)
+    await db.execute('SELECT 1');
+    console.log('Conexión exitosa a la base de datos');
+  } catch (err) {
+    console.error('Error en la conexión a la base de datos:', err);
+  }
+}
 
 // Configurar CORS
 app.use(cors({
@@ -43,8 +51,8 @@ app.post('/api/v1/user/register', async (req, res) => {
 
   try {
     // Verificar si el usuario ya existe
-    const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (existingUser.rows.length > 0) {
+    const existingUser = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
       return res.status(400).json({ message: 'El correo electrónico ya está en uso' });
     }
 
@@ -52,11 +60,11 @@ app.post('/api/v1/user/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Crear nuevo usuario
-    const result = await client.query(
-      'INSERT INTO users (name, lastname, email, password, direction, postalcode) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, lastname, email, direction, postalcode, created_at',
+    await db.execute(
+      'INSERT INTO users (name, lastname, email, password, direction, postalcode) VALUES (?, ?, ?, ?, ?, ?)',
       [name, lastname, email, hashedPassword, direction, postalcode]
     );
-    res.status(201).json({ message: 'Usuario registrado con éxito', user: result.rows[0] });
+    res.status(201).json({ message: 'Usuario registrado con éxito' });
   } catch (error) {
     console.error('Error registrando usuario:', error);
     res.status(500).json({ message: 'Error en el servidor' });
@@ -73,8 +81,8 @@ app.post('/api/v1/user/login', async (req, res) => {
 
   try {
     // Buscar al usuario por correo electrónico
-    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
+    const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const user = result[0];
     if (!user) {
       return res.status(400).json({ message: 'Usuario no encontrado' });
     }
@@ -86,7 +94,7 @@ app.post('/api/v1/user/login', async (req, res) => {
     }
 
     // Generar JWT
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, username: user.name }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
@@ -97,11 +105,11 @@ app.post('/api/v1/user/login', async (req, res) => {
   }
 });
 
-// Ruta para obtener todos los usuarios (solo para pruebas)
+// Ruta para obtener todos los usuarios
 app.get('/api/v1/user/all', async (req, res) => {
   try {
-    const result = await client.query('SELECT id, name, lastname, email, direction, postalcode, created_at FROM users');
-    res.json(result.rows);
+    const result = await db.execute('SELECT * FROM users');
+    res.json(result);
   } catch (error) {
     console.error('Error obteniendo usuarios:', error);
     res.status(500).json({ message: 'Error en el servidor' });
@@ -110,9 +118,9 @@ app.get('/api/v1/user/all', async (req, res) => {
 
 // Ruta para actualizar un usuario
 app.put('/api/v1/user/update', async (req, res) => {
-  const { userId, newName, newLastname, newEmail, newPassword, newDirection, newPostalcode } = req.body;
+  const { userId, newName, newLastname, newEmail, newPassword } = req.body;
 
-  if (!userId || !newName || !newLastname || !newEmail || !newPassword || !newDirection || !newPostalcode) {
+  if (!newName || !newLastname || !newEmail || !newPassword) {
     return res.status(400).json({ message: 'Faltan campos para actualizar' });
   }
 
@@ -120,16 +128,16 @@ app.put('/api/v1/user/update', async (req, res) => {
     // Cifrar la nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const result = await client.query(
-      'UPDATE users SET name = $1, lastname = $2, email = $3, password = $4, direction = $5, postalcode = $6 WHERE id = $7 RETURNING *',
-      [newName, newLastname, newEmail, hashedPassword, newDirection, newPostalcode, userId]
+    const result = await db.execute(
+      'UPDATE users SET name = ?, lastname = ?, email = ?, password = ? WHERE id = ?',
+      [newName, newLastname, newEmail, hashedPassword, userId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    res.json({ message: 'Usuario actualizado', user: result.rows[0] });
+    res.json({ message: 'Usuario actualizado', user: result[0] });
   } catch (error) {
     console.error('Error actualizando usuario:', error);
     res.status(500).json({ message: 'Error en el servidor' });
@@ -145,8 +153,8 @@ app.delete('/api/v1/user/delete', async (req, res) => {
   }
 
   try {
-    const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [userId]);
-    if (result.rows.length === 0) {
+    const result = await db.execute('DELETE FROM users WHERE id = ? RETURNING *', [userId]);
+    if (result.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
@@ -162,7 +170,12 @@ app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+// Iniciar servidor y conectar a la base de datos
+async function startServer() {
+  await connectDatabase();  // Conectar a la base de datos
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+  });
+}
+
+startServer();
