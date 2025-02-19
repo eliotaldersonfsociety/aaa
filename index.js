@@ -170,7 +170,6 @@ app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 
   try {
     // Obtener el saldo del usuario
-    console.log(saldoResult)
     const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [user.id]);
     if (!saldoResult || saldoResult.length === 0) {
       return res.status(500).json({ message: 'Error al obtener el saldo' });
