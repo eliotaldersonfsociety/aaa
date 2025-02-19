@@ -33,37 +33,19 @@ app.use(cors({
 // Configurar body parser para solicitudes JSON
 app.use(bodyParser.json());
 
-// Crear tablas de usuarios y compras
-async function createUserTable() {
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        email VARCHAR(100) UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('Tabla de usuarios creada o ya existe');
-  } catch (error) {
-    console.error('Error creando la tabla de usuarios:', error);
-  }
-}
-
 // Ruta para registrar un nuevo usuario
 app.post('/api/v1/user/register', async (req, res) => {
-  const { username, password, email } = req.body;
+  const { name, lastname, email, password, direction, postalcode } = req.body;
 
-  if (!username || !password || !email) {
+  if (!name || !lastname || !email || !password || !direction || !postalcode) {
     return res.status(400).json({ message: 'Faltan campos requeridos' });
   }
 
   try {
     // Verificar si el usuario ya existe
-    const existingUser = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+    const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: 'El nombre de usuario ya está en uso' });
+      return res.status(400).json({ message: 'El correo electrónico ya está en uso' });
     }
 
     // Cifrar la contraseña
@@ -71,8 +53,8 @@ app.post('/api/v1/user/register', async (req, res) => {
 
     // Crear nuevo usuario
     const result = await client.query(
-      'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
-      [username, hashedPassword, email]
+      'INSERT INTO users (name, lastname, email, password, direction, postalcode) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, lastname, email, direction, postalcode, created_at',
+      [name, lastname, email, hashedPassword, direction, postalcode]
     );
     res.status(201).json({ message: 'Usuario registrado con éxito', user: result.rows[0] });
   } catch (error) {
@@ -83,15 +65,15 @@ app.post('/api/v1/user/register', async (req, res) => {
 
 // Ruta para iniciar sesión
 app.post('/api/v1/user/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
+  if (!email || !password) {
     return res.status(400).json({ message: 'Faltan credenciales' });
   }
 
   try {
-    // Buscar al usuario por nombre de usuario
-    const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+    // Buscar al usuario por correo electrónico
+    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user) {
       return res.status(400).json({ message: 'Usuario no encontrado' });
@@ -104,7 +86,7 @@ app.post('/api/v1/user/login', async (req, res) => {
     }
 
     // Generar JWT
-    const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
@@ -118,7 +100,7 @@ app.post('/api/v1/user/login', async (req, res) => {
 // Ruta para obtener todos los usuarios (solo para pruebas)
 app.get('/api/v1/user/all', async (req, res) => {
   try {
-    const result = await client.query('SELECT * FROM users');
+    const result = await client.query('SELECT id, name, lastname, email, direction, postalcode, created_at FROM users');
     res.json(result.rows);
   } catch (error) {
     console.error('Error obteniendo usuarios:', error);
@@ -128,9 +110,9 @@ app.get('/api/v1/user/all', async (req, res) => {
 
 // Ruta para actualizar un usuario
 app.put('/api/v1/user/update', async (req, res) => {
-  const { userId, newUsername, newPassword } = req.body;
+  const { userId, newName, newLastname, newEmail, newPassword, newDirection, newPostalcode } = req.body;
 
-  if (!newUsername || !newPassword) {
+  if (!userId || !newName || !newLastname || !newEmail || !newPassword || !newDirection || !newPostalcode) {
     return res.status(400).json({ message: 'Faltan campos para actualizar' });
   }
 
@@ -139,8 +121,8 @@ app.put('/api/v1/user/update', async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     const result = await client.query(
-      'UPDATE users SET username = $1, password = $2 WHERE id = $3 RETURNING *',
-      [newUsername, hashedPassword, userId]
+      'UPDATE users SET name = $1, lastname = $2, email = $3, password = $4, direction = $5, postalcode = $6 WHERE id = $7 RETURNING *',
+      [newName, newLastname, newEmail, hashedPassword, newDirection, newPostalcode, userId]
     );
 
     if (result.rows.length === 0) {
@@ -180,12 +162,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 
-// Iniciar servidor y crear tablas
-async function startServer() {
-  await createUserTable();  // Crear tabla de usuarios
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-  });
-}
-
-startServer();
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
