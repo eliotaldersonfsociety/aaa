@@ -113,7 +113,15 @@ app.post('/api/v1/user/login', async (req, res) => {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
-    res.json({ message: 'Login exitoso', token });
+    res.json({ message: 'Login exitoso', 
+              token: token,
+              user: {
+                id: user.id,
+                name: user.name,
+                lastname: user.lastname,
+                email: user.email,
+              }
+             });
   } catch (error) {
     console.error('Error en el login:', error);
     res.status(500).json({ message: 'Error en el servidor' });
