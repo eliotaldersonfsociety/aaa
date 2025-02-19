@@ -61,7 +61,7 @@ app.post('/api/v1/user/register', async (req, res) => {
     const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 
     // Aquí verificamos si `result` tiene un campo que contiene los resultados
-    if (result && result.length > 0) {
+    if (result && result.rows.length > 0) {
       return res.status(400).json({ message: 'El correo electrónico ya está en uso' });
     }
 
@@ -94,7 +94,6 @@ app.post('/api/v1/user/login', async (req, res) => {
 
     console.log("Resultado de la consulta:", result);  // Depuración para ver cómo llega el resultado
 
-
     // Verificar que el resultado sea un array y tenga al menos un usuario
     if (!result.rows || result.rows.length === 0) {
       return res.status(400).json({ message: 'Usuario no encontrado o error al recuerar los datos' });
@@ -112,14 +111,14 @@ app.post('/api/v1/user/login', async (req, res) => {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
-    res.json({ message: 'Login exitoso', 
+    res.json({ message: 'Login exitoso',
               token: token,
               user: {
                 id: user.id,
                 name: user.name,
                 lastname: user.lastname,
                 email: user.email,
-            
+
               }
              });
   } catch (error) {
@@ -135,16 +134,16 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: "El valor de 'amount' debe ser un número" });
   }
 
-  const userId = req.user.id;
+  const userId = req.user.userId;
 
   try {
     // Consultar el saldo actual del usuario en la base de datos
     const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
-    if (!saldoResult || saldoResult.length === 0) {
+    if (!saldoResult || saldoResult.rows.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const currentSaldo = result[0].saldo;
+    const currentSaldo = saldoResult.rows[0].saldo;
 
     // Calcular el nuevo saldo
     const newSaldo = currentSaldo + amount;
@@ -196,10 +195,9 @@ app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
-
 // Ruta para obtener compras (posts) del usuario
 app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   console.log("User ID from JWT:", userId);
   try {
     const result = await db.execute('SELECT * FROM purchases WHERE userId = ?', [userId]);
@@ -209,7 +207,7 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'No purchases found' });
     }
 
-    return res.json({ purchases: result });
+    return res.json({ purchases: result.rows });
   } catch (error) {
     console.error("Error fetching purchases:", error);
     return res.status(500).json({ error: "Error fetching purchases" });
