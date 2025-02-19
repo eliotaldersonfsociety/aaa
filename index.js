@@ -181,12 +181,11 @@ app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 
     console.log("Resultado de la consulta a la base de datos:", saldoResult); // Ver los resultados de la consulta
 
-    if (!saldoResult || saldoResult.length === 0) {
-      console.error("No se encontró saldo para el usuario con ID:", userId);
-      return res.status(500).json({ message: 'Error al obtener el saldo' });
+    if (saldoResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const saldo = saldoResult[0].saldo;
+    const saldo = saldoResult.rows[0].saldo;
     console.log("Saldo obtenido de la base de datos:", saldo); // Ver el saldo obtenido de la base de datos
 
     // Devolver el saldo actual sin modificaciones
