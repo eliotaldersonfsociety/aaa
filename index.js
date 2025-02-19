@@ -70,8 +70,8 @@ app.post('/api/v1/user/register', async (req, res) => {
 
     // Crear nuevo usuario
     await db.execute(
-      'INSERT INTO users (name, lastname, email, password, direction, postalcode) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, lastname, email, hashedPassword, direction, postalcode]
+      'INSERT INTO users (name, lastname, email, password, direction, postalcode, saldo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, lastname, email, hashedPassword, direction, postalcode, 0]
     );
     res.status(201).json({ message: 'Usuario registrado con éxito' });
   } catch (error) {
@@ -96,7 +96,7 @@ app.post('/api/v1/user/login', async (req, res) => {
 
     // Verificar que el resultado sea un array y tenga al menos un usuario
     if (!result.rows || result.rows.length === 0) {
-      return res.status(400).json({ message: 'Usuario no encontrado o error al recuerar los datos' });
+      return res.status(400).json({ message: 'Usuario no encontrado o error al recuperar los datos' });
     }
 
     const user = result.rows[0]; // Asignar el primer usuario encontrado
