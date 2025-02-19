@@ -139,8 +139,8 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 
   try {
     // Consultar el saldo actual del usuario en la base de datos
-    const result = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
-    if (result.length === 0) {
+    const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
+    if (!saldoResult || saldoResult.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
@@ -205,7 +205,7 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM purchases WHERE userId = ?', [userId]);
        // Si no hay compras, devolver un mensaje adecuado
-    if (!result || result.length === 0) {
+    if (!result || result.rows.length === 0) {
       console.log("No purchases found for the user.");
       return res.status(404).json({ message: 'No purchases found' });
     }
