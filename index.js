@@ -165,7 +165,7 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
 
   console.log("ID del usuario autenticado:", userId); // Ver el ID del usuario que está realizando la solicitud
 
