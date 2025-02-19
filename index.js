@@ -129,7 +129,7 @@ app.post('/api/v1/user/login', async (req, res) => {
 });
 
 // Ruta para actualizar saldo
-app.put('/api/v1/user/update-saldo', authMiddleware, async (req, res) => {
+app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   const { amount } = req.body;
   if (typeof amount !== 'number') {
     return res.status(400).json({ message: "El valor de 'amount' debe ser un número" });
