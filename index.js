@@ -164,11 +164,16 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta para ver saldo
 app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
   console.log("ID del usuario autenticado:", userId); // Ver el ID del usuario que está realizando la solicitud
+
+  // Verificar si userId es del tipo adecuado
+  if (typeof userId !== 'number') {
+    console.error("El userId no es un número válido:", userId);
+    return res.status(400).json({ message: 'ID de usuario no válido' });
+  }
 
   try {
     // Obtener el saldo del usuario
@@ -180,7 +185,7 @@ app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
       console.error("No se encontró saldo para el usuario con ID:", userId);
       return res.status(500).json({ message: 'Error al obtener el saldo' });
     }
-    
+
     const saldo = saldoResult[0].saldo;
     console.log("Saldo obtenido de la base de datos:", saldo); // Ver el saldo obtenido de la base de datos
 
