@@ -164,6 +164,27 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
+// Ruta para ver saldo
+app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Consultar el saldo actual del usuario en la base de datos
+    const result = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const currentSaldo = result[0].saldo;
+
+    // Devolver el saldo actual sin modificaciones
+    return res.json({ success: true, saldo: currentSaldo });
+  } catch (error) {
+    console.error('Error obteniendo saldo:', error);
+    return res.status(500).json({ message: 'Error al obtener saldo' });
+  }
+});
+
 // Ruta para obtener compras (posts) del usuario
 app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   const userId = req.user.id;
