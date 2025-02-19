@@ -166,11 +166,11 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 
 // Ruta para ver saldo
 app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
-  const id = req.id;
+  const userId = req.user.id;
 
   try {
     // Consultar el saldo actual del usuario en la base de datos
-    const result = await db.execute('SELECT saldo FROM users WHERE id = ?', [id]);
+    const result = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
     if (result.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
