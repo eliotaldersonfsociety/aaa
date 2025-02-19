@@ -168,21 +168,30 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
 app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
+  console.log("ID del usuario autenticado:", userId); // Ver el ID del usuario que está realizando la solicitud
+
   try {
     // Obtener el saldo del usuario
-    const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [user.id]);
+    const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
+
+    console.log("Resultado de la consulta a la base de datos:", saldoResult); // Ver los resultados de la consulta
+
     if (!saldoResult || saldoResult.length === 0) {
+      console.error("No se encontró saldo para el usuario con ID:", userId);
       return res.status(500).json({ message: 'Error al obtener el saldo' });
     }
+    
     const saldo = saldoResult[0].saldo;
+    console.log("Saldo obtenido de la base de datos:", saldo); // Ver el saldo obtenido de la base de datos
 
     // Devolver el saldo actual sin modificaciones
-    return res.json({ success: true, saldo: currentSaldo });
+    return res.json({ success: true, saldo: saldo });
   } catch (error) {
     console.error('Error obteniendo saldo:', error);
     return res.status(500).json({ message: 'Error al obtener saldo' });
   }
 });
+
 
 // Ruta para obtener compras (posts) del usuario
 app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
