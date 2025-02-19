@@ -17,24 +17,31 @@ console.log("TURSO_AUTH_TOKEN: ", process.env.TURSO_AUTH_TOKEN);
 
 // Conexión a la base de datos de Turso utilizando createClient
 const db = createClient({
-  url: process.env.TURSO_CONNECTION_URL,  // Asegúrate de que la URL es correcta
-  authToken: process.env.TURSO_AUTH_TOKEN,  // Token de autenticación
+  url: process.env.TURSO_CONNECTION_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-// Conectar a la base de datos
-async function connectDatabase() {
-  try {
-    // Test para verificar la conexión (esto no es necesario, pero útil para depuración)
-    await db.execute('SELECT 1');
-    console.log('Conexión exitosa a la base de datos');
-  } catch (err) {
-    console.error('Error en la conexión a la base de datos:', err);
+// Middleware para verificar JWT
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
   }
-}
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload; // Añadimos el payload al request para acceder a él
+    next();
+  } catch (error) {
+    console.error('JWT Error:', error);
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
 
 // Configurar CORS
 app.use(cors({
-  origin: "*",  // Permitir solicitudes desde cualquier frontend
+  origin: "*",
   credentials: true,
 }));
 
@@ -51,8 +58,10 @@ app.post('/api/v1/user/register', async (req, res) => {
 
   try {
     // Verificar si el usuario ya existe
-    const existingUser = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUser.length > 0) {
+    const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+
+    // Aquí verificamos si `result` tiene un campo que contiene los resultados
+    if (result && result.length > 0) {
       return res.status(400).json({ message: 'El correo electrónico ya está en uso' });
     }
 
@@ -82,10 +91,16 @@ app.post('/api/v1/user/login', async (req, res) => {
   try {
     // Buscar al usuario por correo electrónico
     const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-    const user = result[0];
-    if (!user) {
-      return res.status(400).json({ message: 'Usuario no encontrado' });
+
+    console.log("Resultado de la consulta:", result);  // Depuración para ver cómo llega el resultado
+
+
+    // Verificar que el resultado sea un array y tenga al menos un usuario
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(400).json({ message: 'Usuario no encontrado o error al recuerar los datos' });
     }
+
+    const user = result.rows[0]; // Asignar el primer usuario encontrado
 
     // Verificar la contraseña
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -105,63 +120,39 @@ app.post('/api/v1/user/login', async (req, res) => {
   }
 });
 
-// Ruta para obtener todos los usuarios
-app.get('/api/v1/user/all', async (req, res) => {
-  try {
-    const result = await db.execute('SELECT * FROM users');
-    res.json(result);
-  } catch (error) {
-    console.error('Error obteniendo usuarios:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
-  }
-});
-
-// Ruta para actualizar un usuario
-app.put('/api/v1/user/update', async (req, res) => {
-  const { userId, newName, newLastname, newEmail, newPassword } = req.body;
-
-  if (!newName || !newLastname || !newEmail || !newPassword) {
-    return res.status(400).json({ message: 'Faltan campos para actualizar' });
+// Ruta para actualizar saldo
+app.put('/api/v1/user/update-saldo', authMiddleware, async (req, res) => {
+  const { amount } = req.body;
+  if (typeof amount !== 'number') {
+    return res.status(400).json({ message: "El valor de 'amount' debe ser un número" });
   }
 
+  const userId = req.user.id;
+
   try {
-    // Cifrar la nueva contraseña
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    const result = await db.execute(
-      'UPDATE users SET name = ?, lastname = ?, email = ?, password = ? WHERE id = ?',
-      [newName, newLastname, newEmail, hashedPassword, userId]
-    );
-
+    // Consultar el saldo actual del usuario en la base de datos
+    const result = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
     if (result.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    res.json({ message: 'Usuario actualizado', user: result[0] });
-  } catch (error) {
-    console.error('Error actualizando usuario:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
-  }
-});
+    const currentSaldo = result[0].saldo;
 
-// Ruta para eliminar un usuario
-app.delete('/api/v1/user/delete', async (req, res) => {
-  const { userId } = req.body;
+    // Calcular el nuevo saldo
+    const newSaldo = currentSaldo + amount;
 
-  if (!userId) {
-    return res.status(400).json({ message: 'Falta el ID de usuario' });
-  }
-
-  try {
-    const result = await db.execute('DELETE FROM users WHERE id = ? RETURNING *', [userId]);
-    if (result.length === 0) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+    // Validar que el saldo no sea negativo
+    if (newSaldo < 0) {
+      return res.status(400).json({ message: 'Saldo insuficiente' });
     }
 
-    res.json({ message: `Usuario con ID ${userId} eliminado` });
+    // Actualizar el saldo del usuario en la base de datos
+    await db.execute('UPDATE users SET saldo = ? WHERE id = ?', [newSaldo, userId]);
+
+    return res.json({ success: true, newSaldo });
   } catch (error) {
-    console.error('Error eliminando usuario:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('Error actualizando saldo:', error);
+    return res.status(500).json({ message: 'Error al actualizar saldo' });
   }
 });
 
@@ -172,10 +163,17 @@ app.get('/', (req, res) => {
 
 // Iniciar servidor y conectar a la base de datos
 async function startServer() {
-  await connectDatabase();  // Conectar a la base de datos
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-  });
+  try {
+    // Test para verificar la conexión (esto no es necesario, pero útil para depuración)
+    await db.execute('SELECT 1');
+    console.log('Conexión exitosa a la base de datos');
+
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en el puerto ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Error en la conexión a la base de datos:', err);
+  }
 }
 
 startServer();
