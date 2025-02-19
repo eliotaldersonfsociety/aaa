@@ -107,14 +107,6 @@ app.post('/api/v1/user/login', async (req, res) => {
     if (!passwordMatch) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
-
-    // Obtener el saldo del usuario
-    const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [user.id]);
-    if (!saldoResult || saldoResult.length === 0) {
-      return res.status(500).json({ message: 'Error al obtener el saldo' });
-    }
-    const saldo = saldoResult[0].saldo;
-
     // Generar JWT
     const token = jwt.sign({ userId: user.id, username: user.name }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
@@ -127,7 +119,7 @@ app.post('/api/v1/user/login', async (req, res) => {
                 name: user.name,
                 lastname: user.lastname,
                 email: user.email,
-                saldo: saldo
+            
               }
              });
   } catch (error) {
