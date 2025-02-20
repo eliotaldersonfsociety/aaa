@@ -48,7 +48,7 @@ app.use(cors({
 // Configurar body parser para solicitudes JSON
 app.use(bodyParser.json());
 
-// Ruta para registrar un nuevo usuario
+// Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
   const { name, lastname, email, password, direction, postalcode } = req.body;
 
@@ -80,7 +80,7 @@ app.post('/api/v1/user/register', async (req, res) => {
   }
 });
 
-// Ruta para iniciar sesión
+// Ruta para iniciar sesión 🤷‍♂️
 app.post('/api/v1/user/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -127,7 +127,7 @@ app.post('/api/v1/user/login', async (req, res) => {
   }
 });
 
-// Ruta para actualizar saldo
+// Ruta para actualizar saldo de la compra q hizo 💳
 app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   const { amount } = req.body;
   if (typeof amount !== 'number') {
@@ -163,6 +163,7 @@ app.post('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
+//Ruta para mostrar el saldo en dashboard 🤞
 app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   const userId = req.user.userId;
 
@@ -195,7 +196,7 @@ app.get('/api/v1/user/saldo', authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta para obtener compras (posts) del usuario
+// Ruta para obtener compras ya hechas del usuario 🛍️
 app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   const userId = req.user.userId;
   console.log("User ID from JWT:", userId);
@@ -214,7 +215,7 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta para guardar compras
+// Ruta para guardar compras 🔏
 app.post('/api/v1/user/compras', authMiddleware, async (req, res) => {
   const { items, payment_method, total_amount } = req.body;
 
@@ -237,7 +238,7 @@ app.post('/api/v1/user/compras', authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta para actualizar saldo tras una compra
+// Ruta para actualizar saldo tras una compra 🪙
 app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
   console.log("Body recibido:", req.body);
 
