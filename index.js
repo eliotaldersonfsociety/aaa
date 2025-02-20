@@ -239,23 +239,18 @@ app.post('/api/v1/user/compras', authMiddleware, async (req, res) => {
 });
 
 // Ruta para actualizar saldo tras una compra 🪙
-app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
-  console.log("Body recibido:", req.body);
-
-  // Convertimos total_amount a número
-  const total_amount = Number(req.body.total_amount);
-  console.log("total_amount recibido:", total_amount, "Tipo:", typeof total);
-
-  if (isNaN(total_amount) || total_amount <= 0) {
-    console.log("Error: total_amount no es un número válido");
-    return res.status(400).json({ message: 'El total de la compra es inválido' });
-  }
-
-  const userId = req.user.userId;
+app.post('/api/v1/user/actualizar', async (req, res) => {
+  const { userId, total_amount } = req.body;
 
   try {
-    // Obtener saldo actual del usuario
+    // Validar que total_amount sea un número positivo
+    if (typeof total_amount !== 'number' || total_amount <= 0) {
+      return res.status(400).json({ message: 'El total de la compra es inválido' });
+    }
+
+    // Obtener el saldo actual del usuario
     const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
+
     if (!saldoResult || saldoResult.rows.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -298,3 +293,8 @@ async function startServer() {
 }
 
 startServer();
+
+// Ruta de prueba para verificar si la API está funcionando❤️😍💕🤞
+app.get('/', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
