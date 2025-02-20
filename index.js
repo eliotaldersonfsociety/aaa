@@ -239,9 +239,14 @@ app.post('/api/v1/user/compras', authMiddleware, async (req, res) => {
 
 // Ruta para actualizar saldo tras una compra
 app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
-  const { total_amount } = req.body;
+  console.log("Body recibido:", req.body);
 
-  if (typeof total_amount !== 'number') {
+  // Convertimos total_amount a número
+  const total = Number(req.body.total_amount);
+  console.log("total_amount recibido:", total, "Tipo:", typeof total);
+
+  if (isNaN(total)) {
+    console.log("Error: total_amount no es un número válido");
     return res.status(400).json({ message: 'El total de la compra es inválido' });
   }
 
@@ -255,7 +260,7 @@ app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
     }
 
     const currentSaldo = saldoResult.rows[0].saldo;
-    const newSaldo = currentSaldo - total_amount;
+    const newSaldo = currentSaldo - total;
 
     if (newSaldo < 0) {
       return res.status(400).json({ message: 'Saldo insuficiente' });
@@ -263,7 +268,7 @@ app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
 
     // Actualizar saldo del usuario
     await db.execute('UPDATE users SET saldo = ? WHERE id = ?', [newSaldo, userId]);
-    
+
     return res.status(200).json({ message: 'Saldo actualizado con éxito', newSaldo });
   } catch (error) {
     console.error('Error actualizando saldo:', error);
