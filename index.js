@@ -214,7 +214,30 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta de prueba para verificar si la API está funcionando❤️
+// Ruta para actualizar compras
+app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
+  const { items, payment_method, total_amount } = req.body;
+
+  if (!items || !payment_method || typeof total_amount !== 'number') {
+    return res.status(400).json({ message: 'Faltan campos requeridos o datos inválidos' });
+  }
+
+  const userId = req.user.userId;
+
+  try {
+    await db.execute(
+      'INSERT INTO purchases (items, payment_method, user_id, total_amount) VALUES (?, ?, ?, ?)',
+      [JSON.stringify(items), payment_method, userId, total_amount]
+    );
+    
+    return res.status(201).json({ message: 'Compra registrada con éxito' });
+  } catch (error) {
+    console.error('Error guardando compra:', error);
+    return res.status(500).json({ message: 'Error al registrar la compra' });
+  }
+});
+
+// Ruta de prueba para verificar si la API está funcionando❤️😍
 app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
 });
