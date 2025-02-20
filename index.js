@@ -243,10 +243,10 @@ app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
   console.log("Body recibido:", req.body);
 
   // Convertimos total_amount a número
-  const total = Number(req.body.total_amount);
-  console.log("total_amount recibido:", total, "Tipo:", typeof total);
+  const total_amount = Number(req.body.total_amount);
+  console.log("total_amount recibido:", total_amount, "Tipo:", typeof total);
 
-  if (isNaN(total)) {
+  if (isNaN(total_amount) || total_amount <= 0) {
     console.log("Error: total_amount no es un número válido");
     return res.status(400).json({ message: 'El total de la compra es inválido' });
   }
