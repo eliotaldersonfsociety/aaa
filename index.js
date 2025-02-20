@@ -261,7 +261,7 @@ app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
     }
 
     const currentSaldo = saldoResult.rows[0].saldo;
-    const newSaldo = currentSaldo - total;
+    const newSaldo = currentSaldo - total_amount;
 
     if (newSaldo < 0) {
       return res.status(400).json({ message: 'Saldo insuficiente' });
