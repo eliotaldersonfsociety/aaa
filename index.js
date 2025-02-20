@@ -214,8 +214,8 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   }
 });
 
-// Ruta para actualizar compras
-app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
+// Ruta para guardar compras
+app.post('/api/v1/user/compras', authMiddleware, async (req, res) => {
   const { items, payment_method, total_amount } = req.body;
 
   if (!items || !payment_method || typeof total_amount !== 'number') {
@@ -234,6 +234,40 @@ app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error guardando compra:', error);
     return res.status(500).json({ message: 'Error al registrar la compra' });
+  }
+});
+
+// Ruta para actualizar saldo tras una compra
+app.post('/api/v1/user/actualizar', authMiddleware, async (req, res) => {
+  const { total_amount } = req.body;
+
+  if (typeof total_amount !== 'number') {
+    return res.status(400).json({ message: 'El total de la compra es inválido' });
+  }
+
+  const userId = req.user.userId;
+
+  try {
+    // Obtener saldo actual del usuario
+    const saldoResult = await db.execute('SELECT saldo FROM users WHERE id = ?', [userId]);
+    if (!saldoResult || saldoResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const currentSaldo = saldoResult.rows[0].saldo;
+    const newSaldo = currentSaldo - total_amount;
+
+    if (newSaldo < 0) {
+      return res.status(400).json({ message: 'Saldo insuficiente' });
+    }
+
+    // Actualizar saldo del usuario
+    await db.execute('UPDATE users SET saldo = ? WHERE id = ?', [newSaldo, userId]);
+    
+    return res.status(200).json({ message: 'Saldo actualizado con éxito', newSaldo });
+  } catch (error) {
+    console.error('Error actualizando saldo:', error);
+    return res.status(500).json({ message: 'Error al actualizar el saldo' });
   }
 });
 
