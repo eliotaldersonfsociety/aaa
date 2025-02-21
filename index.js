@@ -201,7 +201,7 @@ app.get("/api/v1/purchases", authMiddleware, async (req, res) => {
   const userId = req.user.userId;
   console.log("User ID from JWT:", userId);
   try {
-    const result = await db.execute('SELECT * FROM purchases WHERE userId = ?', [userId]);
+    const result = await db.execute('SELECT * FROM purchases WHERE user_id = ?', [userId]);
        // Si no hay compras, devolver un mensaje adecuado
     if (!result || result.rows.length === 0) {
       console.log("No purchases found for the user.");
