@@ -80,6 +80,8 @@ app.post('/api/v1/user/register', async (req, res) => {
   }
 });
 
+const ADMIN_EMAIL = "antonio@gmail.com"; // Define el correo electrónico del administrador
+
 // Ruta para iniciar sesión 🤷‍♂️
 app.post('/api/v1/user/login', async (req, res) => {
   const { email, password } = req.body;
@@ -106,6 +108,9 @@ app.post('/api/v1/user/login', async (req, res) => {
     if (!passwordMatch) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
+    // Verificar si el usuario es administrador
+    const isAdmin = email === ADMIN_EMAIL;
+
     // Generar JWT
     const token = jwt.sign({ userId: user.id, username: user.name }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
