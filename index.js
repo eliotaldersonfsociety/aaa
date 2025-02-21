@@ -21,7 +21,7 @@ const db = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-// Middleware para verificar JWT
+// Middleware para verificar JWT❤️❤️❤️❤️❤️❤️❤️
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -112,7 +112,7 @@ app.post('/api/v1/user/login', async (req, res) => {
     const isAdmin = email === ADMIN_EMAIL;
 
     // Generar JWT
-    const token = jwt.sign({ userId: user.id, username: user.name }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
@@ -123,7 +123,7 @@ app.post('/api/v1/user/login', async (req, res) => {
                 name: user.name,
                 lastname: user.lastname,
                 email: user.email,
-
+                isAdmin
               }
              });
   } catch (error) {
