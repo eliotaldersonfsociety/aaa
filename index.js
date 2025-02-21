@@ -80,8 +80,6 @@ app.post('/api/v1/user/register', async (req, res) => {
   }
 });
 
-const ADMIN_EMAIL = "antonio@gmail.com"; // Define el correo electrónico del administrador
-
 // Ruta para iniciar sesión 🤷‍♂️
 app.post('/api/v1/user/login', async (req, res) => {
   const { email, password } = req.body;
@@ -112,7 +110,7 @@ app.post('/api/v1/user/login', async (req, res) => {
     const isAdmin = email === ADMIN_EMAIL;
 
     // Generar JWT
-    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin: user.isAdmin }, process.env.JWT_SECRET, {
       expiresIn: '1h',  // El token expirará en 1 hora
     });
 
@@ -123,7 +121,7 @@ app.post('/api/v1/user/login', async (req, res) => {
                 name: user.name,
                 lastname: user.lastname,
                 email: user.email,
-                isAdmin
+                isAdmin: user.isAdmin
               }
              });
   } catch (error) {
