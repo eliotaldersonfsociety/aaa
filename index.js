@@ -106,8 +106,6 @@ app.post('/api/v1/user/login', async (req, res) => {
     if (!passwordMatch) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
-    // Verificar si el usuario es administrador
-    const isAdmin = email === ADMIN_EMAIL;
 
     // Generar JWT
     const token = jwt.sign({ userId: user.id, username: user.name, isAdmin: user.isAdmin }, process.env.JWT_SECRET, {
