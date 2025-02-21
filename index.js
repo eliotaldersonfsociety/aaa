@@ -318,10 +318,21 @@ app.put('/api/v1/user/updateSaldo', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Acceso denegado. Solo el administrador puede modificar el saldo.' });
     }
 
-    // Actualizar el saldo del usuario
-    await db.execute('UPDATE users SET saldo = ? WHERE email = ?', [saldo, email]);
+    // Obtener el saldo actual del usuario
+    const currentSaldoResult = await db.execute('SELECT saldo FROM users WHERE email = ?', [email]);
+    if (currentSaldoResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
 
-    return res.json({ message: 'Saldo actualizado correctamente', newSaldo: saldo });
+    const currentSaldo = currentSaldoResult.rows[0].saldo;
+
+    // Sumar el saldo actual con el nuevo saldo proporcionado
+    const newSaldo = currentSaldo + saldo;
+
+    // Actualizar el saldo del usuario
+    await db.execute('UPDATE users SET saldo = ? WHERE email = ?', [newSaldo, email]);
+
+    return res.json({ message: 'Saldo actualizado correctamente', newSaldo });
   } catch (error) {
     console.error('Error actualizando saldo:', error);
     return res.status(500).json({ message: 'Error al actualizar saldo' });
