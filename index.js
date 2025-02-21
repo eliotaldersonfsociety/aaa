@@ -273,6 +273,29 @@ app.post('/api/v1/user/actualizar', async (req, res) => {
   }
 });
 
+// Ruta para obtener el email y saldo de todos los usuarios (solo para administradores)
+app.get('/api/v1/user/recargar', authMiddleware, async (req, res) => {
+  const userId = req.user.userId; // ID del usuario autenticado
+
+  try {
+    // Verificar si el usuario autenticado es administrador
+    const adminCheck = await db.execute('SELECT isAdmin FROM users WHERE id = ?', [userId]);
+
+    if (adminCheck.rows.length === 0 || adminCheck.rows[0].isAdmin !== 1) {
+      return res.status(403).json({ message: 'Acceso denegado. Solo administradores pueden ver esta información' });
+    }
+
+    // Obtener todos los usuarios con su email y saldo
+    const users = await db.execute('SELECT email, saldo FROM users');
+
+    return res.json({ success: true, users: users.rows });
+  } catch (error) {
+    console.error('Error obteniendo los usuarios:', error);
+    return res.status(500).json({ message: 'Error al obtener los usuarios' });
+  }
+});
+
+
 // Ruta de prueba para verificar si la API está funcionando❤️😍💕
 app.get('/', (req, res) => {
   res.json({ message: 'API is working!' });
