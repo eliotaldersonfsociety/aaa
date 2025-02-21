@@ -302,6 +302,41 @@ app.get('/api/v1/user/recargar', authMiddleware, async (req, res) => {
   }
 });
 
+// Ruta para actualizar el saldo manualmente de un usuario (solo administradores o el propio usuario)
+app.put('/api/v1/user/updateSaldo', authMiddleware, async (req, res) => {
+  const { email, saldo } = req.body; // Recibimos email y saldo
+
+  if (!email || typeof saldo !== 'number') {
+    return res.status(400).json({ message: 'Faltan datos o el saldo no es un número válido' });
+  }
+
+  const userId = req.user.userId;
+
+  try {
+    // Verificar si el usuario autenticado es un administrador o el propio usuario
+    const userCheck = await db.execute('SELECT id, isAdmin FROM users WHERE email = ?', [email]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const user = userCheck.rows[0];
+
+    // Solo los administradores o el propio usuario pueden actualizar su saldo
+    if (user.isAdmin !== 1) {
+      return res.status(403).json({ message: 'Acceso denegado. Solo el administrador o el propio usuario puede modificar su saldo.' });
+    }
+
+    // Actualizar el saldo del usuario
+    await db.execute('UPDATE users SET saldo = ? WHERE email = ?', [saldo, email]);
+
+    return res.json({ message: 'Saldo actualizado correctamente', newSaldo: saldo });
+  } catch (error) {
+    console.error('Error actualizando saldo:', error);
+    return res.status(500).json({ message: 'Error al actualizar saldo' });
+  }
+});
+
+
 
 // Ruta de prueba para verificar si la API está funcionando❤️😍💕
 app.get('/', (req, res) => {
