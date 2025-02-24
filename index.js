@@ -73,6 +73,15 @@ app.post('/api/v1/user/register', async (req, res) => {
       'INSERT INTO users (name, lastname, email, password, direction, postalcode, saldo) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [name, lastname, email, hashedPassword, direction, postalcode, 0]
     );
+
+    // Recuperar el usuario recién creado para generar un token
+    const newUserResult = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const newUser = newUserResult.rows[0];
+
+    const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+    
     res.status(201).json({ message: 'Usuario registrado con éxito' });
   } catch (error) {
     console.error('Error registrando usuario:', error);
