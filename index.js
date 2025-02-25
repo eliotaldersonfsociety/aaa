@@ -5,7 +5,6 @@ const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@libsql/client');  // Usamos createClient para Turso
-const cookieParser = require('cookie-parser'); // Requerimos cookie-parser
 
 dotenv.config();
 
@@ -54,9 +53,6 @@ app.use(cors({
 
 // Configurar body parser para solicitudes JSON
 app.use(bodyParser.json());
-
-// Agregar cookie-parser (¡Muy importante para leer y escribir cookies!)
-app.use(cookieParser());
 
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
