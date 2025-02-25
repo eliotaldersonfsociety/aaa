@@ -88,9 +88,9 @@ app.post('/api/v1/user/register', async (req, res) => {
     // Recuperar el usuario recién creado para generar un token
     const newUserResult = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
     const newUser = newUserResult.rows[0];
-
+    const secret = process.env.NEXTAUTH_SECRET || 'defaultSecretForTesting';
     const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, 
-      process.env.NEXTAUTH_SECRET,
+      secret,
       { expiresIn: '1h' },
     );
     
