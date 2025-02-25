@@ -84,7 +84,7 @@ app.post('/api/v1/user/register', async (req, res) => {
     const user = newUser.rows[0];
 
     // Generar JWT con una clave fija (igual que en el login)
-    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin: user.isAdmin }, 'secreto-duro', {
+    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin: user.isAdmin }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
