@@ -56,50 +56,51 @@ app.use(bodyParser.json());
 
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
-  const { name, lastname, email, password, direction, postalcode } = req.body;
+  const { name, lastname, email, password } = req.body;
 
-  if (!name || !lastname || !email || !password || !direction || !postalcode) {
-    return res.status(400).json({ message: 'Faltan campos requeridos' });
+  if (!name || !lastname || !email || !password) {
+    return res.status(400).json({ message: 'Todos los campos son obligatorios' });
   }
 
   try {
     // Verificar si el usuario ya existe
-    const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const existingUser = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 
-    // Aquí verificamos si `result` tiene un campo que contiene los resultados
-    if (result && result.rows.length > 0) {
-      return res.status(400).json({ message: 'El correo electrónico ya está en uso' });
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'El usuario ya está registrado' });
     }
 
-    // Cifrar la contraseña
+    // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear nuevo usuario
+    // Insertar usuario en la base de datos
     await db.execute(
-      'INSERT INTO users (name, lastname, email, password, direction, postalcode, saldo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, lastname, email, hashedPassword, direction, postalcode, 0]
+      'INSERT INTO users (name, lastname, email, password) VALUES (?, ?, ?, ?)',
+      [name, lastname, email, hashedPassword]
     );
 
-    // Recuperar el usuario recién creado para generar un token
-    const newUserResult = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-    const newUser = newUserResult.rows[0];
-    const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, 
-      { expiresIn: '1h' },
-    );
-    
-    res.status(201).json({ 
-      message: 'Usuario registrado con éxito',
+    // Obtener el usuario recién creado
+    const newUser = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const user = newUser.rows[0];
+
+    // Generar JWT con una clave fija (igual que en el login)
+    const token = jwt.sign({ userId: user.id, username: user.name, isAdmin: user.isAdmin }, 'secreto-duro', {
+      expiresIn: '1h',
+    });
+
+    res.status(201).json({
+      message: 'Registro exitoso',
       token: token,
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          lastname: newUser.lastname,
-          email: newUser.email,
-          isAdmin: newUser.isAdmin
-        }
+      user: {
+        id: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
+        isAdmin: user.isAdmin
+      }
     });
   } catch (error) {
-    console.error('Error registrando usuario:', error);
+    console.error('Error en el registro:', error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 });
