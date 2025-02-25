@@ -42,7 +42,7 @@ const authMiddleware = (req, res, next) => {
 
 // Configurar CORS
 app.use(cors({
-  origin: "*",
+  origin: "https://next-navy-seven.vercel.app",
   credentials: true,
 }));
 
