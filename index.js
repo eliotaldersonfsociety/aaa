@@ -58,6 +58,7 @@ app.use(bodyParser.json());
 // Agregar cookie-parser (¡Muy importante para leer y escribir cookies!)
 app.use(cookieParser());
 
+console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
   const { name, lastname, email, password, direction, postalcode } = req.body;
