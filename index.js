@@ -88,19 +88,22 @@ app.post('/api/v1/user/register', async (req, res) => {
     const newUserResult = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
     const newUser = newUserResult.rows[0];
 
-    const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
-
-    // Enviar el token en una cookie httpOnly
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Solo se enviará por HTTPS en producción
-      maxAge: 3600000, // 1 hora en milisegundos
-      sameSite: 'strict',
-    });
+    const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, 
+      process.env.NEXTAUTH_SECRET,
+      { expiresIn: '1h' },
+    );
     
-    res.status(201).json({ message: 'Usuario registrado con éxito' });
+    res.status(201).json({ 
+      message: 'Usuario registrado con éxito'
+      token: token,
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          lastname: newUser.lastname,
+          email: newUser.email,
+          isAdmin: newUser.isAdmin
+        }
+    });
   } catch (error) {
     console.error('Error registrando usuario:', error);
     res.status(500).json({ message: 'Error en el servidor' });
