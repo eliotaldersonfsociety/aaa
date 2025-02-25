@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const { createClient } = require('@libsql/client');  // Usamos createClient para Turso
 
 dotenv.config();
-
+console.log('Loaded JWT_SECRET:', process.env.JWT_SECRET);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
