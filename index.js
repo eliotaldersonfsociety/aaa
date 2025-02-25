@@ -24,7 +24,7 @@ const db = createClient({
 
 // Middleware para verificar JWT❤️❤️❤️❤️❤️❤️❤️
 const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
@@ -40,9 +40,15 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Configurar CORS
+// Configurar CORS adecuadamente
+const allowedOrigins = ["https://next-navy-seven.vercel.app"];
 app.use(cors({
-  origin: "https://next-navy-seven.vercel.app",
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, origin || allowedOrigins[0]);
+    }
+    return callback(new Error('CORS policy does not allow this origin'), false);
+  },
   credentials: true,
 }));
 
