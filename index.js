@@ -56,9 +56,9 @@ app.use(bodyParser.json());
 
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
-  const { name, lastname, email, password } = req.body;
+  const { name, lastname, email, password, direction, postalcode } = req.body;
 
-  if (!name || !lastname || !email || !password) {
+  if (!name || !lastname || !email || !password || !direction || !postalcode) {
     return res.status(400).json({ message: 'Todos los campos son obligatorios' });
   }
 
@@ -75,8 +75,8 @@ app.post('/api/v1/user/register', async (req, res) => {
 
     // Insertar usuario en la base de datos
     await db.execute(
-      'INSERT INTO users (name, lastname, email, password) VALUES (?, ?, ?, ?)',
-      [name, lastname, email, hashedPassword]
+      'INSERT INTO users (name, lastname, email, password, direction, postalcode, saldo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, lastname, email, hashedPassword, direction, postalcode, 0]
     );
 
     // Obtener el usuario recién creado
