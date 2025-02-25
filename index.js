@@ -58,7 +58,6 @@ app.use(bodyParser.json());
 // Agregar cookie-parser (¡Muy importante para leer y escribir cookies!)
 app.use(cookieParser());
 
-console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
   const { name, lastname, email, password, direction, postalcode } = req.body;
@@ -88,9 +87,7 @@ app.post('/api/v1/user/register', async (req, res) => {
     // Recuperar el usuario recién creado para generar un token
     const newUserResult = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
     const newUser = newUserResult.rows[0];
-    const secret = process.env.NEXTAUTH_SECRET || 'defaultSecretForTesting';
     const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, 
-      secret,
       { expiresIn: '1h' },
     );
     
