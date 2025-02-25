@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@libsql/client');  // Usamos createClient para Turso
+const cookieParser = require('cookie-parser'); // Requerimos cookie-parser
 
 dotenv.config();
 
@@ -48,6 +49,9 @@ app.use(cors({
 // Configurar body parser para solicitudes JSON
 app.use(bodyParser.json());
 
+// Agregar cookie-parser (¡Muy importante para leer y escribir cookies!)
+app.use(cookieParser());
+
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
   const { name, lastname, email, password, direction, postalcode } = req.body;
@@ -80,6 +84,14 @@ app.post('/api/v1/user/register', async (req, res) => {
 
     const token = jwt.sign({ userId: newUser.id, username: newUser.name, isAdmin: newUser.isAdmin }, process.env.JWT_SECRET, {
       expiresIn: '1h',
+    });
+
+    // Enviar el token en una cookie httpOnly
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Solo se enviará por HTTPS en producción
+      maxAge: 3600000, // 1 hora en milisegundos
+      sameSite: 'strict',
     });
     
     res.status(201).json({ message: 'Usuario registrado con éxito' });
