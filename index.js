@@ -91,7 +91,7 @@ app.post('/api/v1/user/register', async (req, res) => {
     res.status(201).json({
       message: 'Registro exitoso',
       token: token,
-      user: {
+      newUser: {
         id: user.id,
         name: user.name,
         lastname: user.lastname,
