@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');  
 const { createClient } = require('@libsql/client');  // Usamos createClient para Turso
 
 dotenv.config();
@@ -56,7 +57,7 @@ app.use(bodyParser.json());
 
 // Ruta para registrar un nuevo usuario 📓📒
 app.post('/api/v1/user/register', async (req, res) => {
-  const { name, lastname, email, password, direction, postalcode } = req.body;
+  const { name, lastname, email, password, direction, postalcode, recaptchaToken } = req.body;
 
   if (!name || !lastname || !email || !password || !direction || !postalcode) {
     return res.status(400).json({ message: 'Todos los campos son obligatorios' });
@@ -116,7 +117,7 @@ app.post('/api/v1/user/register', async (req, res) => {
 
 // Ruta para iniciar sesión 🤷‍♂️
 app.post('/api/v1/user/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, recaptchaToken } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: 'Faltan credenciales' });
