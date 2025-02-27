@@ -63,6 +63,15 @@ app.post('/api/v1/user/register', async (req, res) => {
   }
 
   try {
+        // Verificar el token del reCAPTCHA
+    const recaptchaSecret = "6LeH-eMqAAAAAFY2DENwsi7khcbPuy6AYTdkEEeo";
+    const recaptchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`;
+    const recaptchaResponse = await axios.post(recaptchaVerificationUrl);
+    
+    if (!recaptchaResponse.data.success) {
+      return res.status(400).json({ message: 'Fallo en la verificación del reCAPTCHA' });
+    }
+
     // Verificar si el usuario ya existe
     const existingUser = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 
@@ -114,6 +123,11 @@ app.post('/api/v1/user/login', async (req, res) => {
   }
 
   try {
+    // Verificar el token del reCAPTCHA
+    const recaptchaSecret = "6LeH-eMqAAAAAFY2DENwsi7khcbPuy6AYTdkEEeo";
+    const recaptchaVerificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`;
+    const recaptchaResponse = await axios.post(recaptchaVerificationUrl);
+    
     // Buscar al usuario por correo electrónico
     const result = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 
