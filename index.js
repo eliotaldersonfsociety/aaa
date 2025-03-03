@@ -333,7 +333,7 @@ app.get('/api/v1/user/recargar', authMiddleware, async (req, res) => {
     }
 
     // Obtener todos los usuarios con su email y saldo
-    const users = await db.execute('SELECT email, saldo FROM users');
+    const users = await db.execute('SELECT id, email, name, lastname, direction, postalcode, saldo FROM users');
 
     return res.json({ success: true, users: users.rows });
   } catch (error) {
